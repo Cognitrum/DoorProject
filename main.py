@@ -4,12 +4,33 @@
 # ** and with any distance sensor (HC-SR04, VL53L0x,LIDAR)
 #
 from doorActivity import DoorActivity
-import numpy as np
 import serial,sys,glob,time
 import serial.tools.list_ports as COMs
 from datetime import datetime
+import mysql.connector as mysql
 
 def main():
+
+    db = mysql.connect (
+        host = "localhost",
+        user = "root",
+        passwd = "welcometothejungle",
+        database = "dooractivity"
+    )
+    cursor = db.cursor(buffered=True)
+    # try:
+    #     print(db)
+    #     cursor.execute("SELECT VERSION()")
+    #     results = cursor.fetchone()
+    #     # Check if anything at all is returned
+    #     if results:
+    #         return True
+    #     else:
+    #         return False               
+    # except mysql.Error as err:
+    #     # print ("ERROR IN CONNECTION")
+    #     # print("Something went wrong: {}".format(err))
+    #     return False
     
     isOpen = False
     open = 45
@@ -30,8 +51,9 @@ def main():
             timeDuration = time.time() - currentDoor.startTime
             currentDoor.stopTime = time.time()
             currentDoor.duration = timeDuration
-            print(data)
-            print("Door activity results: \nTimeStart = {}\nTimeStop = {}\nTimeDuration = {}".format(datetime.fromtimestamp(round(currentDoor.startTime,2)), datetime.fromtimestamp(round(currentDoor.stopTime,2)), round(currentDoor.duration,2)))
-            break
+            cursor.execute("INSERT INTO activity(startTime,stopTime,duration) VALUES(%s,%s,%s)", (datetime.fromtimestamp(round(currentDoor.startTime,2)), datetime.fromtimestamp(round(currentDoor.stopTime,2)), round(currentDoor.duration,2)))
+            db.commit()
+            isOpen = False
+        
 if __name__ == '__main__':
     main()
